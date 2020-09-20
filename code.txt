@@ -1,0 +1,470 @@
+from math import sqrt
+
+class Simulation1 :
+
+
+    def __init__(self,X,Y,Z):
+        self.X=X
+        self.Y=Y
+        self.Z=Z
+
+        self.NTAC0 = 96133
+        self.NTANM0 = 93067
+        self.NTAM0 = 3066
+        self.NTT0 = 3485
+        self.NTB0 = 136974
+        self.NTBG0 = 8725
+        self.NTBL0 = 128249
+        self.NMTJ0 = 9.55
+
+        self.bornes_intervalles_NTAC=[-0.03,0,0.02,0.04,0.e07,0.11,0.14]
+        self.frequences_NTAC=[0.1,0.27,0.27,0.14,0.14,0.08]
+
+        self.bornes_ratio_NTAM_NTAC = [-0.0045,-0.0025,0]
+        self.frequences_NTAM=[0.2,0.8]
+
+        self.bornes_ratio_NTT_NTAM = [-0.03,0.015]
+        self.bornes_ratio_NTB_NTAC = [-0.04,0.01]
+        self.bornes_ratio_NTBG_NTB = [0.04,0.09]
+
+
+
+    def generer_alea(self,X,Y,Z):
+
+
+        X = 171 * ( X % 177 ) - 2 * int( X / 177 )
+        Y = 172 * ( Y % 176 ) - 35 * int( Y / 176 )
+        Z = 170 * ( Z % 178 ) - 63 * int( Z / 178 )
+
+        if ( X< 0 ):
+
+                X = X + 30269
+
+        if ( Y< 0 ):
+
+                    Y = Y + 30307
+
+
+        if (Z< 0 ):
+
+                    Z = Z + 30323
+
+
+        inter = ( X / 30269 ) + (Y / 30307) + ( Z / 30323)
+
+        alea = inter - int(inter)
+
+        return alea
+
+
+
+
+
+    def generer_valeur_uniforme(self,a,b,alea):
+        return a+(b-a)*alea
+
+    def calculer_NTAC(self,prec,bornes_intervalles,frequences):
+        nouvelles_bornes= [0]
+        temp = nouvelles_bornes[0]
+        for i in range(1,7):
+            nouvelles_bornes.append(temp+frequences[i-1])
+            temp=nouvelles_bornes[i]
+
+        alea = self.generer_alea(self.X,self.Y,self.Z)
+        for i in range(0,6):
+            if(alea >= nouvelles_bornes[i] and alea <= nouvelles_bornes[i+1]):
+                taux = self.generer_valeur_uniforme(bornes_intervalles[i],bornes_intervalles[i+1],self.generer_alea(self.X+2,self.Y+2,self.Z+2))
+                break
+
+        return prec+ taux*prec
+
+    '''
+    def calculer_NTAM(self,prec,NTAC,bornes_ratio):
+        taux = self.generer_valeur_uniforme(bornes_ratio[0],bornes_ratio[1],self.generer_alea(self.X+15,self.Y+15,self.Z+15))
+
+        return prec+taux*NTAC
+
+    '''
+
+    def calculer_NTAM(self,taux_prec,NTAC,bornes_ratio,frequences):
+            nouvelles_bornes= [0]
+            temp = nouvelles_bornes[0]
+            for i in range(1,3):
+                nouvelles_bornes.append(temp+frequences[i-1])
+                temp=nouvelles_bornes[i]
+
+            alea = self.generer_alea(self.X+4,self.Y+4,self.Z+4)
+            for i in range(0,2):
+                if(alea >= nouvelles_bornes[i] and alea <= nouvelles_bornes[i+1]):
+                    taux = self.generer_valeur_uniforme(bornes_ratio[i],bornes_ratio[i+1],self.generer_alea(self.X+6,self.Y+6,self.Z+6))
+                    break
+
+
+            return (taux_prec+taux)*NTAC
+
+    def calculer_NTANM(self,NTAC,NTAM):
+        return NTAC - NTAM
+
+
+    def calculer_NTT(self,taux_prec,NTAM,bornes_ratio):
+        taux = self.generer_valeur_uniforme(bornes_ratio[0],bornes_ratio[1],self.generer_alea(self.X+8,self.Y+8,self.Z+8))
+
+        return (taux_prec+taux)*NTAM
+
+    def calculer_NTB(self,taux_prec,NTAC,bornes_ratio):
+        taux = self.generer_valeur_uniforme(bornes_ratio[0],bornes_ratio[1],self.generer_alea(self.X+10,self.Y+10,self.Z+10))
+
+        return (taux_prec+taux)*NTAC
+
+
+    def calculer_NTBG(self,NTB,bornes_ratio):
+        taux = self.generer_valeur_uniforme(bornes_ratio[0],bornes_ratio[1],self.generer_alea(self.X+12,self.Y+12,self.Z+12))
+        
+        #print("x : ",self.X,"y : ",self.Y,"z : ",self.Z,"taux : ",taux)
+
+        return taux*NTB
+
+    def calculer_NTBL(self,NTB,NTBG):
+        return NTB - NTBG
+
+    def calculer_NMTJ(self,NTT):
+        return NTT/365
+
+
+
+    def simuler1(self):
+
+        prec_NTAC = self.calculer_NTAC(self.NTAC0,self.bornes_intervalles_NTAC,self.frequences_NTAC)
+        prec_NTAM = self.calculer_NTAM(self.NTAM0/self.NTAC0,prec_NTAC,self.bornes_ratio_NTAM_NTAC,self.frequences_NTAM)
+        prec_NTANM = self.calculer_NTANM(prec_NTAC,prec_NTAM)
+        prec_NTT = self.calculer_NTT(self.NTT0/self.NTAM0,prec_NTAM,self.bornes_ratio_NTT_NTAM)
+        prec_NTB = self.calculer_NTB(self.NTB0/self.NTAC0,prec_NTAC,self.bornes_ratio_NTB_NTAC)
+        prec_NTBG =  self.calculer_NTBG(prec_NTB,self.bornes_ratio_NTBG_NTB)
+        prec_NTBL = self.calculer_NTBL(prec_NTB,prec_NTBG)
+        prec_NMTJ = self.calculer_NMTJ(prec_NTT)
+
+        print("Les valeurs des 8 indicateurs : \n\n  Indicateur \t\t Valeur \n\n Année 2019\n", "\nNTAC \t\t", prec_NTAC, "\nNTAM \t\t", prec_NTAM,"\nNTANM \t\t", prec_NTANM, "\nNTT \t\t", prec_NTT, "\nNTB \t\t", prec_NTB,"\nNTBG \t\t", prec_NTBG, "\nNTBL \t\t", prec_NTBL, "\nNMTJ \t\t", prec_NMTJ )
+
+
+        for i in range(0,11):
+            self.X+=5
+            self.Y+=5
+            self.Z+=5
+            prec_prec_NTAC = prec_NTAC
+            prec_prec_NTAM = prec_NTAM
+
+            prec_NTAC = self.calculer_NTAC(prec_NTAC,self.bornes_intervalles_NTAC,self.frequences_NTAC)
+            prec_NTAM = self.calculer_NTAM(prec_NTAM/prec_prec_NTAC,prec_NTAC,self.bornes_ratio_NTAM_NTAC,self.frequences_NTAM)
+            prec_NTANM = self.calculer_NTANM(prec_NTAC,prec_NTAM)
+            prec_NTT = self.calculer_NTT(prec_NTT/prec_prec_NTAM,prec_NTAM,self.bornes_ratio_NTT_NTAM)
+            prec_NTB = self.calculer_NTB(prec_NTB/prec_prec_NTAC,prec_NTAC,self.bornes_ratio_NTB_NTAC)
+            prec_NTBG =  self.calculer_NTBG(prec_NTB,self.bornes_ratio_NTBG_NTB)
+            prec_NTBL = self.calculer_NTBL(prec_NTB,prec_NTBG)
+            prec_NMTJ = self.calculer_NMTJ(prec_NTT)
+
+            print("\nAnnée ",2020+i, "\nNTAC \t\t", prec_NTAC, "\nNTAM \t\t", prec_NTAM,"\nNTANM \t\t", prec_NTANM, "\nNTT \t\t", prec_NTT, "\nNTB \t\t", prec_NTB,"\nNTBG \t\t", prec_NTBG, "\nNTBL \t\t", prec_NTBL, "\nNMTJ \t\t", prec_NMTJ )
+        
+        self.X-=5*11
+        self.Y-=5*11
+        self.Z-=5*11
+
+
+    def simuler2(self):
+        prec_NTAC = self.calculer_NTAC(self.NTAC0,self.bornes_intervalles_NTAC,self.frequences_NTAC)
+        prec_NTAM = self.calculer_NTAM(self.NTAM0/self.NTAC0,prec_NTAC,self.bornes_ratio_NTAM_NTAC,self.frequences_NTAM)
+        prec_NTANM = self.calculer_NTANM(prec_NTAC,prec_NTAM)
+        prec_NTT = self.calculer_NTT(self.NTT0/self.NTAM0,prec_NTAM,self.bornes_ratio_NTT_NTAM)
+        prec_NTB = self.calculer_NTB(self.NTB0/self.NTAC0,prec_NTAC,self.bornes_ratio_NTB_NTAC)
+        prec_NTBG =  self.calculer_NTBG(prec_NTB,self.bornes_ratio_NTBG_NTB)
+        prec_NTBL = self.calculer_NTBL(prec_NTB,prec_NTBG)
+        prec_NMTJ = self.calculer_NMTJ(prec_NTT)
+
+
+
+        indicateurs = []
+        for i in range(0,11):
+            self.X+=5
+            self.Y+=5
+            self.Z+=5
+            prec_prec_NTAC = prec_NTAC
+            prec_prec_NTAM = prec_NTAM
+
+            prec_NTAC = self.calculer_NTAC(prec_NTAC,self.bornes_intervalles_NTAC,self.frequences_NTAC)
+            prec_NTAM = self.calculer_NTAM(prec_NTAM/prec_prec_NTAC,prec_NTAC,self.bornes_ratio_NTAM_NTAC,self.frequences_NTAM)
+            prec_NTANM = self.calculer_NTANM(prec_NTAC,prec_NTAM)
+            prec_NTT = self.calculer_NTT(prec_NTT/prec_prec_NTAM,prec_NTAM,self.bornes_ratio_NTT_NTAM)
+            prec_NTB = self.calculer_NTB(prec_NTB/prec_prec_NTAC,prec_NTAC,self.bornes_ratio_NTB_NTAC)
+            prec_NTBG =  self.calculer_NTBG(prec_NTB,self.bornes_ratio_NTBG_NTB)
+            prec_NTBL = self.calculer_NTBL(prec_NTB,prec_NTBG)
+            prec_NMTJ = self.calculer_NMTJ(prec_NTT)
+
+            if(i==6):
+                indicateurs.append([prec_NTAC,prec_NTAM,prec_NTANM,prec_NTT,prec_NTB,prec_NTBG,prec_NTBL,prec_NMTJ])
+                print("\n2026\n------------------------\nNTAC \t\t", prec_NTAC, "\nNTAM \t\t", prec_NTAM,"\nNTANM \t\t", prec_NTANM, "\nNTT \t\t", prec_NTT, "\nNTB \t\t", prec_NTB,"\nNTBG \t\t", prec_NTBG, "\nNTBL \t\t", prec_NTBL, "\nNMTJ \t\t", prec_NMTJ)
+
+        print("\n2030\n------------------------\nNTAC \t\t", prec_NTAC, "\nNTAM \t\t", prec_NTAM,"\nNTANM \t\t", prec_NTANM, "\nNTT \t\t", prec_NTT, "\nNTB \t\t", prec_NTB,"\nNTBG \t\t", prec_NTBG, "\nNTBL \t\t", prec_NTBL, "\nNMTJ \t\t", prec_NMTJ)
+
+        self.X-=5*11
+        self.Y-=5*11
+        self.Z-=5*11
+
+        indicateurs.append([prec_NTAC,prec_NTAM,prec_NTANM,prec_NTT,prec_NTB,prec_NTBG,prec_NTBL,prec_NMTJ])
+
+        return indicateurs
+
+
+
+    @staticmethod
+    def calculer_IC(moyenne,somme_carre):
+        S=sqrt((1/39)*(somme_carre-40*moyenne**2))
+        IC = [moyenne - 1.96*S/sqrt(40),moyenne + 1.96*S/sqrt(40)]
+        return IC
+
+    def reduire_intervalles_10pourcent(self,i):
+        self.bornes_intervalles_NTAC = [a - 0.1*i*a if a >0 else a + 0.1*i*a for a in self.bornes_intervalles_NTAC]
+        self.bornes_ratio_NTAM_NTAC = [a - 0.1*i*a if a >0 else a + 0.1*i*a for a in self.bornes_ratio_NTAM_NTAC]
+        self.bornes_ratio_NTT_NTAM = [a - 0.1*i*a if a >0 else a + 0.1*i*a for a in self.bornes_ratio_NTT_NTAM]
+        self.bornes_ratio_NTB_NTAC = [a - 0.1*i*a if a >0 else a + 0.1*i*a for a in self.bornes_ratio_NTB_NTAC]
+        self.bornes_ratio_NTBG_NTB = [a - 0.1*i*a if a >0 else a + 0.1*i*a for a in self.bornes_ratio_NTBG_NTB]
+
+
+
+### Execution
+
+if __name__ == "__main__":
+
+    print("\nSCENARIO 1 QST1")
+
+    X = int(input("Veuillez saisir le premier germe : \n"))
+    Y = int(input("Veuillez saisir le deuxième germe : \n"))
+    Z = int(input("Veuillez saisir le troisième germe : \n"))
+
+
+
+    S = Simulation1(X,Y,Z)
+    S.simuler1()
+
+    ### Qst 2
+    print("\nSCENARIO 1 QST2")
+
+    somme_indicateurs_2026=8*[0]
+    somme_indicateurs_carre_2026=8*[0]
+    somme_indicateurs_2030=8*[0]
+    somme_indicateurs_carre_2030=8*[0]
+
+    for i in range(0,40):
+        print("\nSimulation ", i+1)
+        S = Simulation1(X,Y,Z)
+
+        indicateurs=S.simuler2()
+        indicateurs_2026=indicateurs[0]
+        indicateurs_2030=indicateurs[1]
+
+        somme_indicateurs_2026= [ a+b for a,b in zip(indicateurs_2026,somme_indicateurs_2026) ]
+        somme_indicateurs_carre_2026=[ a**2+b for a,b in zip(indicateurs_2026,somme_indicateurs_carre_2026) ]
+
+        somme_indicateurs_2030= [ a+b for a,b in zip(indicateurs_2030,somme_indicateurs_2030) ]
+        somme_indicateurs_carre_2030=[ a**2+b for a,b in zip(indicateurs_2030,somme_indicateurs_carre_2030) ]
+
+        X+=5
+        Y+=5
+        Z+=5
+    # 2026
+    moyenne_indicateurs_2026= [a/40 for a in somme_indicateurs_2026]
+
+    print("\n\nLa moyenne des indicateurs des 40 sim jusqu'à 2026\n\nNTAC \t\t", moyenne_indicateurs_2026[0], "\nNTAM \t\t", moyenne_indicateurs_2026[1],"\nNTANM \t\t", moyenne_indicateurs_2026[2], "\nNTT \t\t", moyenne_indicateurs_2026[3], "\nNTB \t\t", moyenne_indicateurs_2026[4],"\nNTBG \t\t", moyenne_indicateurs_2026[5], "\nNTBL \t\t", moyenne_indicateurs_2026[6], "\nNMTJ \t\t", moyenne_indicateurs_2026[7])
+
+
+
+    IC_indicateurs_2026 = [Simulation1.calculer_IC(a,b) for a,b in zip(moyenne_indicateurs_2026,somme_indicateurs_carre_2026)]
+
+    print("\n\nIC à 95% des 8 indicateurs des 40 sim jusqu'à 2026 \n\nIC_NTAC \t\t", IC_indicateurs_2026[0], "\nIC_NTAM \t\t", IC_indicateurs_2026[1],"\nIC_NTANM \t\t", IC_indicateurs_2026[2], "\nIC_NTT \t\t", IC_indicateurs_2026[3], "\nIC_NTB \t\t", IC_indicateurs_2026[4],"\nIC_NTBG \t\t",IC_indicateurs_2026[5], "\nIC_NTBL \t\t", IC_indicateurs_2026[6], "\nIC_NMTJ \t\t", IC_indicateurs_2026[7])
+
+   # 2030
+    moyenne_indicateurs_2030= [a/40 for a in somme_indicateurs_2030]
+
+    print("\n\nLa moyenne des indicateurs des 40 sim jusqu'à 2030\n\nNTAC \t\t", moyenne_indicateurs_2030[0], "\nNTAM \t\t", moyenne_indicateurs_2030[1],"\nNTANM \t\t", moyenne_indicateurs_2030[2], "\nNTT \t\t", moyenne_indicateurs_2030[3], "\nNTB \t\t", moyenne_indicateurs_2030[4],"\nNTBG \t\t", moyenne_indicateurs_2030[5], "\nNTBL \t\t", moyenne_indicateurs_2030[6], "\nNMTJ \t\t", moyenne_indicateurs_2030[7])
+
+
+
+    IC_indicateurs_2030 = [Simulation1.calculer_IC(a,b) for a,b in zip(moyenne_indicateurs_2030,somme_indicateurs_carre_2030)]
+
+    print("\n\nIC à 95% des 8 indicateurs des 40 sim jusqu'à 2030\n\nIC_NTAC \t\t", IC_indicateurs_2030[0], "\nIC_NTAM \t\t", IC_indicateurs_2030[1],"\nIC_NTANM \t\t", IC_indicateurs_2030[2], "\nIC_NTT \t\t", IC_indicateurs_2030[3], "\nIC_NTB \t\t", IC_indicateurs_2030[4],"\nIC_NTBG \t\t",IC_indicateurs_2030[5], "\nIC_NTBL \t\t", IC_indicateurs_2030[6], "\nIC_NMTJ \t\t", IC_indicateurs_2030[7])
+
+
+    ###Scenario2
+
+    print("\nSCENARIO 2 QST1")
+
+
+
+    X = int(input("Veuillez saisir le premier germe : scenario 2\n"))
+    Y = int(input("Veuillez saisir le deuxième germe : scenario 2\n"))
+    Z = int(input("Veuillez saisir le troisième germe : scenario 2\n"))
+
+
+
+    S = Simulation1(X,Y,Z)
+
+    S.reduire_intervalles_10pourcent(1)
+
+    S.simuler1()
+
+    ### Qst 2
+    print("\nSCENARIO 2 QST2")
+
+    somme_indicateurs_2026=8*[0]
+    somme_indicateurs_carre_2026=8*[0]
+    somme_indicateurs_2030=8*[0]
+    somme_indicateurs_carre_2030=8*[0]
+
+    for i in range(0,40):
+        print("\nSimulation ", i+1)
+        S = Simulation1(X,Y,Z)
+        S.reduire_intervalles_10pourcent(1)
+
+        indicateurs=S.simuler2()
+        indicateurs_2026=indicateurs[0]
+        indicateurs_2030=indicateurs[1]
+
+        somme_indicateurs_2026= [ a+b for a,b in zip(indicateurs_2026,somme_indicateurs_2026) ]
+        somme_indicateurs_carre_2026=[ a**2+b for a,b in zip(indicateurs_2026,somme_indicateurs_carre_2026) ]
+
+        somme_indicateurs_2030= [ a+b for a,b in zip(indicateurs_2030,somme_indicateurs_2030) ]
+        somme_indicateurs_carre_2030=[ a**2+b for a,b in zip(indicateurs_2030,somme_indicateurs_carre_2030) ]
+
+        X+=5
+        Y+=5
+        Z+=5
+
+    # 2026
+    moyenne_indicateurs_2026= [a/40 for a in somme_indicateurs_2026]
+
+    print("\n\nLa moyenne des indicateurs des 40 sim jusqu'à 2026\n\nNTAC \t\t", moyenne_indicateurs_2026[0], "\nNTAM \t\t", moyenne_indicateurs_2026[1],"\nNTANM \t\t", moyenne_indicateurs_2026[2], "\nNTT \t\t", moyenne_indicateurs_2026[3], "\nNTB \t\t", moyenne_indicateurs_2026[4],"\nNTBG \t\t", moyenne_indicateurs_2026[5], "\nNTBL \t\t", moyenne_indicateurs_2026[6], "\nNMTJ \t\t", moyenne_indicateurs_2026[7])
+
+
+
+    IC_indicateurs_2026 = [Simulation1.calculer_IC(a,b) for a,b in zip(moyenne_indicateurs_2026,somme_indicateurs_carre_2026)]
+
+    print("\n\nIC à 95% des 8 indicateurs des 40 sim jusqu'à 2026 \n\nIC_NTAC \t\t", IC_indicateurs_2026[0], "\nIC_NTAM \t\t", IC_indicateurs_2026[1],"\nIC_NTANM \t\t", IC_indicateurs_2026[2], "\nIC_NTT \t\t", IC_indicateurs_2026[3], "\nIC_NTB \t\t", IC_indicateurs_2026[4],"\nIC_NTBG \t\t",IC_indicateurs_2026[5], "\nIC_NTBL \t\t", IC_indicateurs_2026[6], "\nIC_NMTJ \t\t", IC_indicateurs_2026[7])
+
+   # 2030
+    moyenne_indicateurs_2030= [a/40 for a in somme_indicateurs_2030]
+
+    print("\n\nLa moyenne des indicateurs des 40 sim jusqu'à 2030\n\nNTAC \t\t", moyenne_indicateurs_2030[0], "\nNTAM \t\t", moyenne_indicateurs_2030[1],"\nNTANM \t\t", moyenne_indicateurs_2030[2], "\nNTT \t\t", moyenne_indicateurs_2030[3], "\nNTB \t\t", moyenne_indicateurs_2030[4],"\nNTBG \t\t", moyenne_indicateurs_2030[5], "\nNTBL \t\t", moyenne_indicateurs_2030[6], "\nNMTJ \t\t", moyenne_indicateurs_2030[7])
+
+
+
+    IC_indicateurs_2030 = [Simulation1.calculer_IC(a,b) for a,b in zip(moyenne_indicateurs_2030,somme_indicateurs_carre_2030)]
+
+    print("\n\nIC à 95% des 8 indicateurs des 40 sim jusqu'à 2030\n\nIC_NTAC \t\t", IC_indicateurs_2030[0], "\nIC_NTAM \t\t", IC_indicateurs_2030[1],"\nIC_NTANM \t\t", IC_indicateurs_2030[2], "\nIC_NTT \t\t", IC_indicateurs_2030[3], "\nIC_NTB \t\t", IC_indicateurs_2030[4],"\nIC_NTBG \t\t",IC_indicateurs_2030[5], "\nIC_NTBL \t\t", IC_indicateurs_2030[6], "\nIC_NMTJ \t\t", IC_indicateurs_2030[7])
+
+
+
+    ### Scenario 3
+    print("\nSCENARIO 3")
+
+    X = int(input("Veuillez saisir le premier germe : scenario 3\n"))
+    Y = int(input("Veuillez saisir le deuxième germe : scenario 3\n"))
+    Z = int(input("Veuillez saisir le troisième germe : scenario 3\n"))
+
+
+
+    S = Simulation1(X,Y,Z)
+    cpt=0
+
+    intervalles = [ S.bornes_intervalles_NTAC,
+        S.bornes_ratio_NTAM_NTAC,
+        S.bornes_ratio_NTT_NTAM,
+        S.bornes_ratio_NTB_NTAC,
+        S.bornes_ratio_NTBG_NTB]
+
+
+    print("\nSimulation avec ",-(10+10*cpt),"%\n")
+    S.reduire_intervalles_10pourcent(1)
+    indicateurs = S.simuler2()[0]
+
+    [ S.bornes_intervalles_NTAC,
+        S.bornes_ratio_NTAM_NTAC,
+        S.bornes_ratio_NTT_NTAM,
+        S.bornes_ratio_NTB_NTAC,
+        S.bornes_ratio_NTBG_NTB] = intervalles
+
+    while(indicateurs[3]> 2000) :
+
+        cpt+=1
+        S.reduire_intervalles_10pourcent(cpt+1)
+        print("\nSimulation avec ",-(10+10*cpt),"%\n")
+
+        indicateurs = S.simuler2()[0] ##simulation jusqu'à 2026
+
+        [ S.bornes_intervalles_NTAC,
+            S.bornes_ratio_NTAM_NTAC,
+            S.bornes_ratio_NTT_NTAM,
+            S.bornes_ratio_NTB_NTAC,
+            S.bornes_ratio_NTBG_NTB] = intervalles
+
+
+
+    print("\n Réduire la valeur des intervalles de ",-(10+10*cpt),"% suffit pour atteindre notre objectif de 2000 morts par année")
+
+
+
+    print("\nEn reprenant les questions 1 & 2 du Scenario 1 avec les nouvelles valeurs des intervalles, on a alors : \n")
+
+    S.reduire_intervalles_10pourcent(cpt+1)
+
+    ### Qst 1
+    print("\nSCENARIO 3 QST1")
+
+    S.simuler1()
+
+    ### Qst 2
+    print("\nSCENARIO 3 QST2")
+
+    somme_indicateurs_2026=8*[0]
+    somme_indicateurs_carre_2026=8*[0]
+    somme_indicateurs_2030=8*[0]
+    somme_indicateurs_carre_2030=8*[0]
+
+    for i in range(0,40):
+        print("\nSimulation ", i+1)
+        S = Simulation1(X,Y,Z)
+        S.reduire_intervalles_10pourcent(cpt+1)
+
+        indicateurs=S.simuler2()
+        indicateurs_2026=indicateurs[0]
+        indicateurs_2030=indicateurs[1]
+
+        somme_indicateurs_2026= [ a+b for a,b in zip(indicateurs_2026,somme_indicateurs_2026) ]
+        somme_indicateurs_carre_2026=[ a**2+b for a,b in zip(indicateurs_2026,somme_indicateurs_carre_2026) ]
+
+        somme_indicateurs_2030= [ a+b for a,b in zip(indicateurs_2030,somme_indicateurs_2030) ]
+        somme_indicateurs_carre_2030=[ a**2+b for a,b in zip(indicateurs_2030,somme_indicateurs_carre_2030) ]
+
+        X+=5
+        Y+=5
+        Z+=5
+
+    # 2026
+    moyenne_indicateurs_2026= [a/40 for a in somme_indicateurs_2026]
+
+    print("\n\nLa moyenne des indicateurs des 40 sim jusqu'à 2026\n\nNTAC \t\t", moyenne_indicateurs_2026[0], "\nNTAM \t\t", moyenne_indicateurs_2026[1],"\nNTANM \t\t", moyenne_indicateurs_2026[2], "\nNTT \t\t", moyenne_indicateurs_2026[3], "\nNTB \t\t", moyenne_indicateurs_2026[4],"\nNTBG \t\t", moyenne_indicateurs_2026[5], "\nNTBL \t\t", moyenne_indicateurs_2026[6], "\nNMTJ \t\t", moyenne_indicateurs_2026[7])
+
+
+
+    IC_indicateurs_2026 = [Simulation1.calculer_IC(a,b) for a,b in zip(moyenne_indicateurs_2026,somme_indicateurs_carre_2026)]
+
+    print("\n\nIC à 95% des 8 indicateurs des 40 sim jusqu'à 2026 \n\nIC_NTAC \t\t", IC_indicateurs_2026[0], "\nIC_NTAM \t\t", IC_indicateurs_2026[1],"\nIC_NTANM \t\t", IC_indicateurs_2026[2], "\nIC_NTT \t\t", IC_indicateurs_2026[3], "\nIC_NTB \t\t", IC_indicateurs_2026[4],"\nIC_NTBG \t\t",IC_indicateurs_2026[5], "\nIC_NTBL \t\t", IC_indicateurs_2026[6], "\nIC_NMTJ \t\t", IC_indicateurs_2026[7])
+
+   # 2030
+    moyenne_indicateurs_2030= [a/40 for a in somme_indicateurs_2030]
+
+    print("\n\nLa moyenne des indicateurs des 40 sim jusqu'à 2030\n\nNTAC \t\t", moyenne_indicateurs_2030[0], "\nNTAM \t\t", moyenne_indicateurs_2030[1],"\nNTANM \t\t", moyenne_indicateurs_2030[2], "\nNTT \t\t", moyenne_indicateurs_2030[3], "\nNTB \t\t", moyenne_indicateurs_2030[4],"\nNTBG \t\t", moyenne_indicateurs_2030[5], "\nNTBL \t\t", moyenne_indicateurs_2030[6], "\nNMTJ \t\t", moyenne_indicateurs_2030[7])
+
+
+
+    IC_indicateurs_2030 = [Simulation1.calculer_IC(a,b) for a,b in zip(moyenne_indicateurs_2030,somme_indicateurs_carre_2030)]
+
+    print("\n\nIC à 95% des 8 indicateurs des 40 sim jusqu'à 2030\n\nIC_NTAC \t\t", IC_indicateurs_2030[0], "\nIC_NTAM \t\t", IC_indicateurs_2030[1],"\nIC_NTANM \t\t", IC_indicateurs_2030[2], "\nIC_NTT \t\t", IC_indicateurs_2030[3], "\nIC_NTB \t\t", IC_indicateurs_2030[4],"\nIC_NTBG \t\t",IC_indicateurs_2030[5], "\nIC_NTBL \t\t", IC_indicateurs_2030[6], "\nIC_NMTJ \t\t", IC_indicateurs_2030[7])
+
